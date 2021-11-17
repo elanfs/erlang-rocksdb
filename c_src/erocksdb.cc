@@ -117,6 +117,7 @@ static ErlNifFunc nif_funcs[] =
         {"transaction_iterator", 3, erocksdb::IteratorTransaction, ERL_NIF_REGULAR_BOUND},
         {"transaction_iterator", 4, erocksdb::IteratorTransaction, ERL_NIF_REGULAR_BOUND},
         {"transaction_commit", 1, erocksdb::CommitTransaction, ERL_NIF_DIRTY_JOB_IO_BOUND},
+        {"transaction_rollback", 1, erocksdb::RollbackTransaction, ERL_NIF_DIRTY_JOB_IO_BOUND},
 
         // Batch
         {"batch", 0, erocksdb::NewBatch, ERL_NIF_REGULAR_BOUND},
