@@ -62,6 +62,38 @@ delete_test() ->
     close_destroy(Db, "transaction_testdb"),
     ok.
 
+rollback_test() ->
+    Db = destroy_reopen("transaction_testdb", [{create_if_missing, true}]),
+
+    {ok, Transaction} = rocksdb:transaction(Db, []),
+
+    ok = rocksdb:transaction_put(Transaction, <<"a">>, <<"v1">>),
+    ok = rocksdb:transaction_put(Transaction, <<"b">>, <<"v2">>),
+
+    ok = rocksdb:transaction_commit(Transaction),
+
+    ?assertEqual({ok, <<"v1">>}, rocksdb:get(Db, <<"a">>, [])),
+    ?assertEqual({ok, <<"v2">>}, rocksdb:get(Db, <<"b">>, [])),
+
+    %% Create a second transaction with changes that will be rolled back
+    {ok, Transaction1} = rocksdb:transaction(Db, []),
+
+    ok = rocksdb:transaction_put(Transaction1, <<"a">>, <<"v2">>),
+    ok = rocksdb:transaction_put(Transaction1, <<"c">>, <<"v3">>),
+
+    ok = rocksdb:transaction_delete(Transaction1, <<"b">>),
+    ok = rocksdb:transaction_delete(Transaction1, <<"d">>),
+
+    ok = rocksdb:transaction_rollback(Transaction1),
+
+    ?assertEqual({ok, <<"v1">>}, rocksdb:get(Db, <<"a">>, [])),
+    ?assertEqual({ok, <<"v2">>}, rocksdb:get(Db, <<"b">>, [])),
+    ?assertEqual(not_found, rocksdb:get(Db, <<"c">>, [])),
+    ?assertEqual(not_found, rocksdb:get(Db, <<"d">>, [])),
+
+    close_destroy(Db, "transaction_testdb"),
+    ok.
+
 cf_iterators_test() ->
     Db = destroy_reopen("transaction_testdb", [{create_if_missing, true}]),
     {ok, TestH} = rocksdb:create_column_family(Db, "test", []),

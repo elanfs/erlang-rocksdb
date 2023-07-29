@@ -416,5 +416,33 @@ namespace erocksdb {
         }
     }
 
+    ERL_NIF_TERM
+    RollbackTransaction(ErlNifEnv* env,
+                      int /*argc*/,
+                      const ERL_NIF_TERM argv[])
+    {
+
+        ReferencePtr<erocksdb::ColumnFamilyObject> cf_ptr;
+        rocksdb::Transaction *t = nullptr;
+        TransactionResource *transaction = nullptr;
+
+        if(!enif_get_resource(env, argv[0], m_Transaction_RESOURCE, (void **) &transaction)) {
+            return enif_make_badarg(env);
+        }
+        t = transaction->transaction;
+        if(t == nullptr ) {
+            return enif_make_badarg(env);
+        }
+
+        rocksdb::Status s = t->Rollback();
+        delete t;
+        transaction->transaction = nullptr;
+
+        if( s.ok() ) {
+            return ATOM_OK;
+        } else {
+            return error_tuple(env, ATOM_ERROR, s);
+        }
+    }
 
 }
